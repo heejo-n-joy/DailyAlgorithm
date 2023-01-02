@@ -18,54 +18,51 @@ import java.util.StringTokenizer;
  * - 하루에 한 사람만 상담 가능
  * 
  * 풀어나갈 방향
- * - 상담 테이블을 전역변수(배열)로 설정
- * - 이 상담을 할 것인가? 안할 것인가?로 구분하며 상담 시뮬레이션 진행
- * - 이전 시뮬레이션의 수익보다 클 경우 갱신
- * - 결과값 출력
+ * - DP로 접근해보자
+ * - 첫 상담일부터 순차적으로 진행(for)
+ * - 현재 날짜에서 상담을 진행했을 때의 결과를 바뀐 날짜에 저장한다 (최대값 비교, 이후 날짜가 N+1이내인지 체크 필수)
+ * - 이렇게 하면 해당 날짜의 상담일이 진행될 때는, 현재 날짜까지의 최대값이 저장되지 않을까?
  * 
  * 체감 난이도 : ★★☆☆☆
- * - 순간 고민을 하게 했다.
+ * - DP스러운 생각을 하는게 쉽지 않았다.
  * 
  * 회고할 내용
+ * - 사실 이 문제는 N<=15이기 때문에 앞서 풀었던 Brute Force로도 가능한 간단한 문제였다.
+ * - 그러나 N의 범위가 매우 큰 문제라면 무조건 DP로 풀어야 하지 않을까 싶다.
+ * - 지금처럼 다양한 시각을 좀 기르는 훈련을 해야겠다.
  * 
- * @author Heejo Park
+ * @author HeejoPark
  *
  */
 public class Main {
-	static int consulting_table[][];
-	static int max_income;
-	static int N;
 	public static void main(String[] args) throws Exception {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		N = Integer.parseInt(br.readLine()); // 퇴사까지 남은 일자
-		consulting_table = new int[N+1][2];
+		int N = Integer.parseInt(br.readLine()); // 퇴사까지 남은 일자
+		int consulting_table[][] = new int[N+1][2];
 		for(int i = 1; i<=N; i++) {			
 			StringTokenizer st = new StringTokenizer(br.readLine());
-			consulting_table[i][0] = Integer.parseInt(st.nextToken());
-			consulting_table[i][1] = Integer.parseInt(st.nextToken());
+			consulting_table[i][0] = Integer.parseInt(st.nextToken());	//상담 얼마나 걸리는지
+			consulting_table[i][1] = Integer.parseInt(st.nextToken());	//상담 얼마나 돈주는지
 		}
-		max_income = 0;
-		execute(0, 1);
-		System.out.println(max_income);
-		
-	}
-	public static void execute(int current_income, int current_day) {
-		//퇴사일을 지난다면 해당 시뮬레이션은 탈락
-		if(current_day>N+1) {
-			return;
-		}
-		//퇴사일이라면 
-		else if(current_day==N+1) {
-			//최대값 비교
-			if(current_income > max_income) {
-				max_income = current_income;
+		int max_consulting_income[] = new int[N+2];		//1~N+1까지의 날짜
+		//계산
+		for(int i = 1; i<=N; i++) {
+			//전일 상담 최대값과 금일 상담 최대값 비교
+			if(max_consulting_income[i-1]>max_consulting_income[i]) {
+				//전일 상담 최대값이 금일 상담 최대값보다 크면, 어제 기준으로 상담 안하는게 더 이득이므로 반영한다.
+				max_consulting_income[i] = max_consulting_income[i-1];
 			}
-			return;
+			//현재 상담을 진행해도 퇴사일자까지 가는지?
+			if(i + consulting_table[i][0]<=N+1) {
+				//안가면 가능하므로 최대값 갱신. 오늘 날짜 최대값+오늘 상담 진행 vs 그 날짜의 현 최대값
+				max_consulting_income[i+consulting_table[i][0]] = 
+						Math.max(consulting_table[i][1]+max_consulting_income[i], max_consulting_income[i+consulting_table[i][0]]);
+			}
+			else {				
+				//퇴사일자 벗어나면 의미가 없음. 실행안한다.
+			}
 		}
-		
-		//선택1. 현재 날짜의 신규 상담을 받는다.
-		execute(current_income+consulting_table[current_day][1], current_day+consulting_table[current_day][0]);
-		//선택2. 현재 날짜의 신규 상담을 받지 않는다.
-		execute(current_income, current_day+1);
+		int max_income = Math.max(max_consulting_income[N+1], max_consulting_income[N]);	//N+1일 기준 최대값 출력
+		System.out.println(max_income);	
 	}
 }
